@@ -1,133 +1,115 @@
-# Android에서 테스트하기
+# Android 테스트 APK
 
-이 문서는 앞으로 Android용 테스트 앱을 만들 때 따라갈 순서입니다. 현재 저장소에는 Android 프로젝트나 APK가 없고, Android 실기기에서 음성을 생성해 본 상태도 아닙니다.
+[Android 릴리스](https://github.com/JHOO2010/keeper-tts-demo/releases/tag/android-v0.1.0)에서 `Keeper-TTS-0.1.0-android-test.apk`를 받으면 됩니다.
 
-## 먼저 확인할 것
+이 앱은 문장을 입력하면 기기 안에서 한국어 음성을 만들고 재생합니다. 모델을 APK에 포함했으며 인터넷 권한을 요청하지 않습니다. Windows용 Python이나 PowerShell은 필요 없습니다.
 
-테스트할 실제 키오스크의 Android 버전, CPU 종류, RAM과 남은 저장 공간을 확인해 둡니다. 같은 Android라도 기기마다 생성 속도와 사용할 수 있는 메모리가 다릅니다.
+**테스트용 APK입니다. 빌드와 정적 검사, 같은 Java 엔진의 PC 음성 생성은 확인했지만 Android 실기기에서 설치·실행한 상태는 아닙니다.**
 
-개발 PC에는 Android Studio와 Android SDK Platform-Tools가 필요합니다. 모델은 Windows에서 설치한 `models/supertonic-3` 폴더를 사용하면 됩니다. 모델과 임시 파일이 차지할 공간도 따로 확보하세요.
+## 설치할 기기
 
-기기에서 USB 디버깅을 켜고 PC에 연결한 뒤, 기기에 표시되는 연결 허용을 직접 확인합니다. 이후 PC 터미널에서 확인합니다.
+- Android 8.0(API 26) 이상
+- 64비트 ARM(`arm64-v8a`) 또는 `x86_64`
+- APK 약 443MB. 설치 파일·앱·내부 모델 복사 공간을 고려해 여유 공간 1.5GB 이상을 권장합니다.
+- 32비트 ARM 기기는 이 APK에 포함하지 않았습니다.
+
+RAM 4GB 이상인 기기부터 테스트하는 편이 좋습니다. 이는 검증된 최소 사양이 아니라 테스트를 시작할 때의 권장 기준입니다. 실제 키오스크의 메모리·CPU에 따라 앱이 실행되지 않거나 생성이 느릴 수 있습니다.
+
+## 설치하고 실행하기
+
+1. APK를 기기에 내려받거나 USB로 옮깁니다.
+2. 파일 앱에서 APK를 열어 설치합니다. 기기가 설치 출처 허용을 요청하면 해당 설치 앱에 대해 직접 확인합니다.
+3. `Keeper TTS`를 엽니다.
+4. 첫 실행에는 APK에 들어 있는 모델을 앱 내부 저장소로 복사하고 무결성을 확인합니다. 다운로드는 하지 않습니다.
+5. `준비 완료`가 표시되면 문장을 입력하고 **음성 만들고 듣기**를 누릅니다.
+
+F1~F5, M1~M5 목소리와 0.8·1.0·1.2배 속도를 선택할 수 있습니다. 문장은 한 번에 300자까지 입력합니다. **다시 듣기**, **재생 중지**, **WAV 저장**도 사용할 수 있습니다. WAV 저장을 누르면 Android 파일 저장 화면에서 위치를 정합니다.
+
+첫 준비에는 시간이 걸릴 수 있습니다. 모델을 복사할 공간이 부족하면 저장 공간을 확보하고 앱을 다시 실행하세요. 반복해서 실패하면 오류 화면과 기기 사양을 기록해 주세요.
+
+## PC에서 USB로 설치하기
+
+Android SDK Platform-Tools의 `adb`를 사용합니다. 개발자 옵션에서 USB 디버깅을 켜고, 기기에 표시되는 연결 허용을 직접 확인하세요.
 
 ```powershell
 adb devices
 adb shell getprop ro.build.version.release
 adb shell getprop ro.product.cpu.abilist
+adb install -r Keeper-TTS-0.1.0-android-test.apk
 ```
 
-`adb`를 찾지 못하면 Android SDK의 `platform-tools` 폴더에서 실행하거나 PATH에 추가하세요. `unauthorized`가 나오면 기기의 USB 디버깅 허용 화면을 확인합니다. 여러 기기를 연결했다면 `adb -s 기기번호 ...`로 대상을 지정하세요.
+`adb`가 PATH에 없으면 Android SDK의 `platform-tools` 폴더에서 실행하세요. 여러 기기가 연결됐다면 `adb -s 기기번호 ...`로 대상을 지정합니다. `unauthorized`라면 기기의 연결 허용 화면을 확인합니다.
 
-## 1. 스피커부터 확인하기
-
-Windows에서 음성 파일을 하나 만듭니다.
+설치 후 앱 서랍에서 Keeper TTS를 열면 됩니다. 앱 오류 로그는 아래 명령으로 확인할 수 있습니다.
 
 ```powershell
-.\run-voice.ps1 -Text "안녕하세요. 주문을 도와드리겠습니다." -Output outputs/android-speaker.wav
-adb push outputs/android-speaker.wav /sdcard/Download/
+adb logcat -s KeeperTTS AndroidRuntime
 ```
 
-키오스크의 파일 앱에서 WAV를 열어 소리가 나오는지 확인합니다. 스피커, 볼륨, USB 오디오 같은 기본 문제를 먼저 확인하는 단계입니다. **이것만으로 Android에서 모델이 돌아간 것은 아닙니다.**
+앱 패키지 이름은 `io.keeper.tts`입니다. 디버그 키로 서명한 개발·테스트용 APK이며 정식 운영·스토어 배포용 서명은 아닙니다. 나중에 다른 키로 서명한 앱은 이 APK 위에 바로 업데이트되지 않을 수 있습니다.
 
-## 2. 작은 테스트 앱 만들기
+## 오프라인 테스트
 
-처음부터 Keeper 전체에 붙이기보다, 문장 입력·생성 버튼·재생 버튼·소요 시간만 있는 앱으로 시작하면 원인을 찾기 쉽습니다.
+모델을 다운로드한 적 없는 기기에서도 APK만으로 동작해야 합니다.
 
-구현 방향은 **Kotlin + ONNX Runtime Android + CPU 실행**입니다. 앱에 넣을 라이브러리는 `com.microsoft.onnxruntime:onnxruntime-android`이며, 사용할 버전을 정해 Gradle에 고정합니다. Windows의 Python용 패키지를 Android 앱에 복사해서 쓰는 방식은 아닙니다.
+1. APK를 USB로 옮겨 준비합니다.
+2. Wi-Fi, 모바일 데이터, 유선망을 모두 끄고 설치·실행합니다.
+3. 이전에 생성하지 않았던 문장을 입력해 읽는 내용이 맞는지 확인합니다.
+4. 앱을 완전히 종료했다가 다시 엽니다.
+5. 기기를 재부팅하고 USB 연결도 끊은 뒤 다시 생성합니다.
 
-모델을 앱의 assets에 포함하는 경우에는 아래처럼 준비할 수 있습니다. 이 경로는 앞으로 만들 Android 프로젝트의 예시입니다.
-
-```text
-app/src/main/assets/supertonic-3/
-├── onnx/
-│   ├── duration_predictor.onnx
-│   ├── text_encoder.onnx
-│   ├── vector_estimator.onnx
-│   ├── vocoder.onnx
-│   ├── tts.json
-│   └── unicode_indexer.json
-└── voice_styles/
-    └── F1.json
-```
-
-다른 목소리도 쓸 거라면 해당 JSON을 함께 넣습니다. 모델의 라이선스 파일도 배포본에 포함하세요.
-
-기기에서 모델 경로로 세션을 열려면 첫 실행 때 assets의 파일을 앱 내부 저장소로 복사한 후 사용할 수 있습니다. 이미 복사한 파일은 매번 다시 복사하지 않도록 하고, 모델 버전이 바뀔 때만 교체합니다. USB로 모델을 별도 배포한다면 앱이 그 파일을 내부 저장소로 가져오는 기능도 필요합니다.
-
-APK 크기와 설치·복사 중의 임시 저장 공간까지 확인해야 합니다. 모든 Android 기기에서 설치된다고 보장하는 사양은 아직 정하지 않았습니다.
-
-## 3. 음성 생성 연결하기
-
-처리 순서는 아래와 같습니다.
-
-```text
-입력 문장
-→ 한국어 태그와 Unicode 전처리
-→ duration_predictor / text_encoder
-→ vector_estimator 반복 실행
-→ vocoder
-→ PCM 음성
-→ AudioTrack 재생 또는 WAV 저장
-```
-
-ONNX 파일 하나만 여는 것으로 끝나지 않습니다. 공식 Java 예제를 참고해 텍스트 전처리, 네 모델의 입출력, 목소리 데이터 로딩, 반복 추론을 함께 옮겨야 합니다. 한국어 언어 코드는 `ko`로 맞춥니다.
-
-시작할 때는 Windows와 동일하게 F1, 속도 1.0, 추론 5단계로 비교하세요. 출력 샘플레이트는 모델 설정에서 읽고 재생 쪽에도 동일하게 설정합니다.
-
-모델 세션은 앱에서 한 번 로딩해 재사용합니다. 모델 로딩과 음성 생성은 UI 스레드 밖에서 실행하고, 연속 요청이 들어와도 메모리가 계속 늘지 않도록 세션과 텐서 수명을 관리합니다.
-
-## 4. 실제 기기에서 실행하기
-
-Android 프로젝트를 만든 다음 Android Studio에서 연결된 키오스크를 선택해 Run으로 설치할 수 있습니다.
-
-Gradle wrapper가 있는 표준 Android 프로젝트라면 PC 터미널에서도 빌드·설치할 수 있습니다. **아래 명령은 Android 프로젝트 폴더에서 실행하는 예시이며, 현재 이 저장소 루트에서는 실행되지 않습니다.**
-
-```powershell
-.\gradlew.bat assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-설치 후 앱을 열어 입력한 문장으로 새로운 음성을 만들어 봅니다. 미리 넣은 WAV를 재생하는 대신, 지금 입력한 문장이 실제로 들리는지 확인합니다.
-
-## 5. 인터넷을 끊고 다시 확인하기
-
-모델을 포함한 APK나 필요한 파일을 USB로 준비한 뒤 다음을 확인합니다.
-
-1. Wi-Fi, 모바일 데이터, 유선망을 모두 끕니다. 비행기 모드에서도 Wi-Fi가 다시 켜져 있지 않은지 확인합니다.
-2. 앱을 완전히 종료하고 다시 엽니다.
-3. 이전에 생성하지 않았던 문장을 입력해 음성을 만듭니다.
-4. 기기를 재부팅한 뒤 같은 테스트를 반복합니다.
-5. 개발 PC와의 USB 연결도 끊고 단독으로 실행합니다.
-
-최초 설치부터 인터넷 없이 써야 한다면, 깨끗한 테스트 설치에서도 모든 모델 파일이 APK 또는 별도 설치 매체만으로 준비되는지 확인해야 합니다. 개발 중 받아둔 캐시 덕분에 작동하는 경우와 구분하세요.
-
-## 6. 확인할 문장과 기록
+앱에 이미 들어 있는 WAV를 재생하는 테스트와 구분해야 합니다. **지금 입력한 새 문장**을 기기에서 생성하는지 확인하세요.
 
 | 확인할 것 | 예시 |
 | --- | --- |
-| 짧은 안내 | 안녕하세요. 주문을 도와드리겠습니다. |
+| 기본 안내 | 안녕하세요. 주문을 도와드리겠습니다. |
 | 결제 안내 | 결제가 완료되었습니다. 카드를 챙겨 주세요. |
 | 숫자와 가격 | 아메리카노 두 잔, 총 8,000원입니다. |
 | 메뉴 이름과 영문 | ICE 아메리카노와 디카페인 라테를 선택하셨습니다. |
-| 긴 안내 | 문장을 여러 개 이어서 입력하고 끊김이나 누락이 있는지 확인합니다. |
+| 연속 요청 | 짧은 안내 문장을 30회 생성하고 멈춤·메모리 증가·발열을 확인합니다. |
 
-발음은 직접 들어서 확인하고, 숫자나 영문 표기가 어색하면 Keeper에서 읽기 좋은 문장으로 바꾸는 처리도 검토합니다.
+기기 모델, Android 버전, CPU, RAM, 모델 준비 시간, 생성 시간과 음성 길이를 기록해 두세요. 앱 화면에 생성 시간과 음성 길이가 표시됩니다. 숫자나 영문 발음은 직접 듣고 확인해야 합니다.
 
-기기별로 아래 내용을 남겨두면 Windows와 비교하기 좋습니다.
+## Keeper에 붙일 때
 
-- 기기 모델, Android 버전, CPU, RAM
-- 모델 로딩 시간과 음성 생성 시간
-- 생성한 음성 길이와 사용한 목소리·속도·추론 단계
-- 앱을 처음 켰을 때와 두 번째 요청의 차이
-- 연속 30회 실행했을 때 멈춤, 발열, 메모리 증가 여부
-- 네트워크 차단 후 재실행·재부팅 결과
+Android 코드는 `android` 폴더에 있습니다. 음성 엔진은 공식 Supertonic Java 예제를 Android에 맞게 수정했고, CPU용 ONNX Runtime Android를 사용합니다. 모델 세션은 재사용하고, 파일 준비와 음성 생성은 UI 스레드 밖에서 실행합니다.
 
-지금 Windows에서 측정한 속도가 Android에서도 그대로 나오는 것은 아닙니다. 에뮬레이터는 기능 확인에 쓰고, 속도와 메모리는 실제 키오스크에서 판단하세요.
+앱의 `MainActivity`는 테스트 화면입니다. 기존 Keeper에 붙일 때는 모델 준비·음성 생성·재생 부분을 서비스나 별도 클래스로 분리하고 요청 취소, 음성 안내 순서, 결제 흐름과의 연결을 추가하는 편이 좋습니다. 현재 APK를 키오스크 전체 앱으로 만든 것은 아닙니다.
 
-## 참고 자료
+## 직접 빌드하기
 
-- [Supertonic Java 예제](https://github.com/supertone-oss-archive/supertonic/tree/main/java): 전처리와 모델 실행 흐름을 참고할 코드입니다. Android 완성 앱은 아닙니다.
-- [ONNX Runtime Android 예제](https://onnxruntime.ai/docs/tutorials/mobile/deploy-android.html): Android 프로젝트에 런타임을 연결하는 방법입니다. 이미지 모델 예제이므로 TTS 처리는 별도로 구현해야 합니다.
-- [Android 실제 기기 연결](https://developer.android.com/studio/run/device)
+Android Studio 또는 JDK 17~21, Android SDK Platform 35, Build Tools 35.0.0이 필요합니다. Python은 모델 파일을 준비하는 개발 스크립트에만 사용합니다.
+
+Windows에서 모델 설치를 마친 뒤 실행하세요.
+
+```powershell
+.\setup-tts.ps1
+.\scripts\build_android.ps1 -AndroidSdk 'C:\Users\사용자이름\AppData\Local\Android\Sdk'
+```
+
+스크립트는 모델과 체크섬을 Android assets에 준비하고, APK 빌드와 lint 검사를 실행합니다. SDK 경로, 모델 가중치, 빌드 결과, 개인 서명 키는 Git에 올리지 않습니다.
+
+결과는 `release/Keeper-TTS-0.1.0-android-test.apk`에 저장됩니다. SHA-256은 `release/SHA256SUMS-android.txt`에서 확인할 수 있습니다. 이 APK를 실행하는 기기에는 Python이나 개발 도구가 필요 없습니다.
+
+## 이번에 확인한 범위
+
+| 항목 | 결과 |
+| --- | --- |
+| APK 컴파일 | 성공 |
+| Android lint | 오류 없이 통과. 번역 리소스 등 경고는 남아 있습니다. |
+| APK 서명 검증 | Android 디버그 서명 검증 통과 |
+| 인터넷 권한 | Manifest에 없음 |
+| 모델 가중치 | APK 안에 포함, 원본 파일별 SHA-256 검사 |
+| Java 엔진 | PC에서 F1·M1 한국어 생성과 WAV 저장 확인 |
+| 실제 Android 설치·화면·재생 | 기기가 없어 아직 확인하지 못함 |
+
+## 출처와 라이선스
+
+Supertonic 3 모델은 Supertone Inc.가 제작했으며 가중치는 수정하지 않았습니다. OpenRAIL-M 라이선스의 Section 5 및 Attachment A 사용 제한이 적용됩니다. APK 안에 원본 모델 라이선스, 출처 안내, 원본 revision과 파일 해시가 들어 있습니다. 앱의 **모델 출처와 라이선스** 버튼에서도 주요 라이선스를 볼 수 있습니다.
+
+Keeper 코드는 MIT, 수정한 Supertonic Java 예제는 원본 MIT 고지를 유지합니다. ONNX Runtime과 Jackson의 라이선스도 APK에 포함했습니다.
+
+- [원본 Java 예제](https://github.com/supertone-oss-archive/supertonic/tree/main/java)
+- [ONNX Runtime Android](https://onnxruntime.ai/docs/tutorials/mobile/deploy-android.html)
+- [실제 기기 연결](https://developer.android.com/studio/run/device)
 - [ADB 사용법](https://developer.android.com/tools/adb)
-- [AudioTrack](https://developer.android.com/reference/android/media/AudioTrack)
