@@ -4,11 +4,12 @@ import json
 import math
 import os
 import socket
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(sys.executable if getattr(sys, 'frozen', False) else __file__).resolve().parent
 
 def main():
     p = argparse.ArgumentParser(description='Offline Korean TTS / Supertonic 3 / CPU')
@@ -19,6 +20,7 @@ def main():
     p.add_argument('--output', type=Path)
     p.add_argument('--download', action='store_true', help='One-time online model setup')
     p.add_argument('--play', action='store_true', help='Play generated WAV on Windows')
+    p.add_argument('--interactive', action='store_true', help='Read sentences repeatedly from the terminal')
     a = p.parse_args()
     if not a.text.strip(): p.error('Text must not be empty')
     if not 1 <= a.steps <= 20: p.error('Steps must be 1 to 20')
@@ -45,9 +47,29 @@ def main():
               intra_op_num_threads=4, inter_op_num_threads=1)
     loaded = time.perf_counter() - started
     print(f'Model loaded in {loaded:.2f}s', flush=True)
-    print(f'Text: {a.text}', flush=True)
+    if a.interactive and a.output:
+        p.error('--output cannot be combined with --interactive')
+    if a.interactive:
+        print('문장을 입력하세요. 빈 줄을 입력하면 종료합니다.', flush=True)
+        while True:
+            try:
+                text = input('\n읽을 문장 > ').strip()
+            except (EOFError, KeyboardInterrupt):
+                break
+            if not text:
+                break
+            target = ROOT / 'outputs' / (datetime.now().strftime('keeper-%Y%m%d-%H%M%S-%f') + '.wav')
+            generate(tts, a, text, target, loaded)
+    else:
+        generate(tts, a, a.text, out, loaded)
+
+
+def generate(tts, a, text, out, loaded):
+    import numpy as np
+    import soundfile as sf
+    print(f'Text: {text}', flush=True)
     started = time.perf_counter()
-    wav, _ = tts.synthesize(a.text, voice_style=tts.get_voice_style(a.voice), lang='ko',
+    wav, _ = tts.synthesize(text, voice_style=tts.get_voice_style(a.voice), lang='ko',
                              total_steps=a.steps, speed=a.speed)
     elapsed = time.perf_counter() - started
     samples = np.asarray(wav).squeeze()

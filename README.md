@@ -4,6 +4,20 @@ Keeper 키오스크 도우미에 붙이기 전에, 한국어 음성이 잘 나�
 
 Supertonic 3를 사용합니다. GPU 없이 CPU로 돌아가고, 처음에 모델을 받아두면 인터넷 없이 쓸 수 있습니다. 지금은 Windows에서 실행을 확인한 상태입니다.
 
+## 설치 없이 바로 써보기
+
+[릴리스 페이지](https://github.com/JHOO2010/keeper-tts-demo/releases/latest)에서 `Keeper-TTS-0.1.0-windows-x64.zip`을 받으세요.
+
+1. ZIP 전체를 쓰기 가능한 폴더에 압축 해제합니다.
+2. `start.cmd`를 더블클릭합니다.
+3. 읽을 문장을 입력하고 Enter를 누릅니다. 빈 줄을 입력하면 종료합니다.
+
+Python 실행 환경과 모델이 모두 들어 있어 **첫 실행부터 인터넷 없이 사용할 수 있습니다.** Windows 64비트용이며, Android APK는 아닙니다.
+
+앱에 직접 모델을 붙이려는 개발자는 `Keeper-Supertonic3-models.zip`만 받아도 됩니다. 이 파일에는 실행 프로그램이 없고, 압축 안의 `models/supertonic-3`를 프로젝트에 옮겨 사용합니다. Windows 실행용 ZIP을 받았다면 모델을 또 받을 필요는 없습니다.
+
+[Windows 실행용 자세한 안내](docs/WINDOWS_RELEASE.md)
+
 ## 다른 PC에서 처음 실행하기
 
 Windows 64비트와 Python 3.13이 필요합니다. Git이 없다면 GitHub의 **Code → Download ZIP**으로 받아서 압축을 풀어도 됩니다.
@@ -70,7 +84,7 @@ ZIP으로 받았다면 압축을 푼 폴더에서 PowerShell을 열고 `.\setup-
 
 다른 PC의 `.venv-supertonic` 폴더는 경로나 Python 설치 위치가 달라 그대로 복사하면 작동하지 않을 수 있습니다. 대상 PC에서 가상환경을 만들고 패키지를 설치하는 편이 좋습니다.
 
-현재 `setup-tts.ps1`은 인터넷으로 패키지를 설치하는 방식입니다. 인터넷이 전혀 없는 새 PC에서 바로 설치하는 전용 배포본은 아직 없습니다. 실행 환경과 모델을 준비한 뒤의 음성 생성은 오프라인으로 됩니다.
+현재 `setup-tts.ps1`은 인터넷으로 패키지를 설치하는 방식입니다. Python을 따로 준비하기 어렵거나 인터넷이 없는 PC에서 쓰려면 위의 Windows 실행용 ZIP을 사용하세요.
 
 ## Android에서는 어떻게 테스트하나요?
 
@@ -99,3 +113,16 @@ Android에서는 같은 모델 파일을 쓰되, Kotlin과 ONNX Runtime Android�
 Supertonic은 현재 보관 상태로, 원 제작사의 개발·지원은 종료되었습니다. 배포에 사용할 모델과 라이브러리는 버전을 정해 함께 보관하는 편이 좋습니다.
 
 모델 라이선스는 OpenRAIL-M입니다. 자세한 조건은 내려받은 모델 폴더의 라이선스 파일에서 확인할 수 있습니다.
+
+이 저장소의 Keeper 코드는 MIT 라이선스입니다. 모델에는 별도의 OpenRAIL-M 조건이 적용되며, 릴리스에 원본 라이선스와 사용 제한 안내를 함께 넣었습니다. 모델 가중치는 수정하지 않았고, Keeper가 제작한 모델로 표시하지 않습니다.
+
+## 실행용 ZIP 다시 만들기
+
+Windows 개발 환경에서 모델 설치를 마친 후 실행합니다.
+
+```powershell
+.\.venv-supertonic\Scripts\python.exe -m pip install -r requirements-build.txt
+.\.venv-supertonic\Scripts\python.exe scripts/package_release.py
+```
+
+결과는 `release` 폴더에 생성됩니다. 같은 버전의 준비 폴더가 이미 있으면 덮어쓰지 않고 멈추므로 새 빌드에는 버전 또는 준비 폴더를 구분하세요. 릴리스 ZIP의 SHA-256은 `SHA256SUMS.txt`, 모델 원본과 개별 파일 해시는 `MODEL_SOURCE.json`에서 확인할 수 있습니다.

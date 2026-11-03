@@ -9,3 +9,7 @@ __pycache__/
 !.env.example
 kiosk/
 *.log
+build/
+dist/
+release/
+*.spec
