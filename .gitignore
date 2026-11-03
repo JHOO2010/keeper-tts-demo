@@ -1,0 +1,11 @@
+.venv*/
+.vscode/
+models/
+outputs/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+kiosk/
+*.log
